@@ -4,21 +4,20 @@ spl_autoload_register(function ($class_name) {
 });
 class Individu extends Utils
 {
-    // public function __construct($time, $cities_amount, $objek_wisata, $digit, $id_data)
-    public function __construct()
+    public function __construct($time, $cities_amount, $objek_wisata, $digit, $id_data = null)
     {
         // define('API_KEY', 'AIzaSyBTE9O-ina1ZgUJgu9P4kN66etZyjErqYw');
-        // $this->time = $time;
-        // $this->chrom_length = $cities_amount;
-        // $this->objek_wisata = $objek_wisata;
-        // $this->digit = $digit;
-        $this->time = 4;
-        $this->chrom_length = 2;
-        $this->objek_wisata = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-        $this->digit = 4;
+        $this->time = $time;
+        $this->chrom_length = $cities_amount;
+        $this->objek_wisata = $objek_wisata;
+        $this->digit = $digit;
+        // $this->time = 4;
+        // $this->chrom_length = 2;
+        // $this->objek_wisata = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        // $this->digit = 4;
         $this->id_origin = 1;
         $this->velocity = 40;
-        $this->id_data = 'D004';
+        $this->id_data = $id_data;
         $this->waktu_kunjung = 60;
         $servername = "localhost";
         $username = "root";

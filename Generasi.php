@@ -7,38 +7,43 @@ class Generasi
         define('MUTATION_RATE', 0.1);
         define('CROSSOVER_RATE', 0.5);
         $API_KEY = "AIzaSyBTE9O-ina1ZgUJgu9P4kN66etZyjErqYw";
-        $this->individu = new Individu();
-        $this->database = new Database();
+        $this->digit = 4;
+        $this->time = $time;
         $this->id_data = null;
         $this->origin_name = "Ngurah Rai";
+
+        $this->database = new Database();
+        if ($this->time <= 6) {
+            $this->objek_wisata = $this->database->selectObjekWisataAreaA();
+        } else {
+            $this->objek_wisata = $this->database->selectObjekWisataAll();
+        }
+        if (isset($_GET['lang']) && isset($_GET['lat'])) {
+            $this->id_data = 'B001';
+        }
+        $this->individu = new Individu($time, $cities_visited, $this->objek_wisata, $this->digit, $this->id_data);
         if (isset($_GET['lang']) && isset($_GET['lat'])) {
             $lat = $_GET['lat'];
             $lang = $_GET['lang'];
-            $this->id_data = 'B001';
+            // DEBUGGING PURPOSE, PLEASE DELETE THIS SOON
             $lat = "-8.634864";
             $lang = "115.192476";
-            # https: //maps.googleapis.com/maps/api/geocode/json?latlng=40.714224,-73.961452&key=YOUR_API_KEY
             $url = "https://maps.googleapis.com/maps/api/geocode/json?latlng=" . $lat . "," . $lang . "&key=" . $API_KEY;
             $response = file_get_contents($url);
             $result = json_decode($response, true);
-            $this->origin_name = "Tempat lain";
+            $this->origin_name = $result["results"][0]["formatted_address"];
             $this->individu->insertDistance($this->id_data, $lat, $lang);
         }
+
         // Belum termasuk jam
         $this->digit = 4;
         define('BATAS_AWAL', $this->digit * 2);
         $this->utils = new Utils();
         $this->population = $pops;
         $this->cities_visited = $cities_visited;
-        $this->time = $time;
+
         $this->velocity = 40;
 
-        // TODO: Benerin ini biar objek wisatanya bisa nyesuaiin ngurah rai atau current dest
-        if ($this->time <= 6) {
-            $this->objek_wisata = $this->database->selectObjekWisataAreaA();
-        } else {
-            $this->objek_wisata = $this->database->selectObjekWisataAll();
-        }
     }
     public function getDestinationName($id)
     {
@@ -50,31 +55,46 @@ class Generasi
     public function runGAAll($counter)
     {
         $first_pop = '';
-        for ($i = 1; $i <= $counter; $i++) {
+        for ($i = 0; $i < $counter; $i++) {
             try {
                 $first_pop = $this->runGA($first_pop);
+
             } catch (Exception $e) {
-                echo $e->getMessage() . "<br>";
-                break;
+                // echo $e->getMessage() . "<br>";
+                // break;
+                http_response_code(404);
+                die();
             }
         }
+
+        // Convert hasil
         if ($first_pop != null || $first_pop != '') {
             $arr_sel_pop = array_slice($first_pop, 0, -1);
             $b = sizeof($arr_sel_pop);
             $chrom_int = [];
+            $chrom_name = [];
             $i = 0;
             $utils = new Utils();
+            $dec = 0;
             while ($i < $b) {
                 $binary_array = array_slice($first_pop, $i, $this->digit);
-                if ($i !== 0) {
+                // To get last index of array
+                if ($i === sizeof($first_pop) - $this->digit - 1 || $i === $this->digit) {
+                    $name = $this->origin_name;
+                    $dec = 1;
+                } else if ($i !== 0) {
                     $dec = $this->bintodec($binary_array);
-                    array_push($chrom_int, str_replace('+', ' ', $this->getDestinationName($dec)));
+                    $name = $this->getDestinationName($dec);
+                }
+                if ($i !== 0) {
+                    array_push($chrom_int, $dec);
+                    array_push($chrom_name, str_replace('+', ' ', $name));
                 }
                 $i += $this->digit;
             }
-            $json_final = [];
-            array_push($json_final,
-                ["availability_time" => $this->time], ["destinasi" => $chrom_int], ["total_travel_minutes" => 1 / end($first_pop)]);
+            $data_jarak = $utils->getDistanceEach($chrom_int);
+
+            $json_final = ["availability_time" => $this->time, "destination" => $chrom_name, "travel_distance" => $data_jarak, "total_travel_minutes" => 1 / end($first_pop)];
             echo json_encode($json_final);
         }
 
@@ -82,41 +102,24 @@ class Generasi
 
     public function runGA($first_pop)
     {
-        // // Inisiasi Kromosom
+        // Inisiasi Kromosom
         $utils = new Utils();
         try {
             $population = $this->generatePops($first_pop);
-            // include 'population_test.php';
             $fitness_collection = [];
             foreach ($population as $line) {
                 array_push($fitness_collection, end($line));
             }
 
-            // Print out current pops
-            // echo $this->my_print_r2($population);
-            // echo "Populasi Sudah Diinisialisasi <br>=====================================<br><br>";
-            // var_dump($fitness_collection);
-            // echo $this->my_print_r2($population);
-
-            // ###################################################################
-            // Crossover
-            // echo "Crossover<br>=====================================<br><br>";
             $population = $this->crossover($population);
-            // echo $this->my_print_r2($population);
-
-            // ###################################################################
-            // Mutasi
-            // echo "Mutation<br>=================================<br><br>";
             $population = $this->mutation($population);
-            // echo $this->my_print_r2($population);
-
-            // Seleksi Alam
-            // echo "Seleksi Alam dan yang terpilih jeng jeng<br>=================================<br><br>";
             $selected_pops = $population[$this->selection($population)];
             return $selected_pops;
         } catch (Exception $e) {
-            throw new Exception('Tidak ditemukan solusi');
-            // echo 'Caught exception: ',  $e->getMessage(), "\n";
+            # instead maybe better to use this
+            http_response_code(404);
+            die();
+            // throw new Exception('404');
         }
 
     }
@@ -137,8 +140,6 @@ class Generasi
             $kromosom_baru = $kromosom->generateChrom();
             if ($kromosom_baru !== false) {
                 array_push($population, $kromosom_baru);
-            } else {
-                throw new Exception('Tidak ditemukan solusi!');
             }
         }
         return $population;
@@ -149,7 +150,6 @@ class Generasi
     {
         $available_to_xo = CROSSOVER_RATE * $this->population;
         // DEBUG
-        // echo "Jumlah Kromosom yang di XOR :".$available_to_xo."<br><br>";
         for ($i = 0; $i < $available_to_xo; $i += 2) {
             // $rand_index_1 = mt_rand(1,($this->population-1));
             $rand_index_1 = $this->selection($population);
@@ -165,8 +165,6 @@ class Generasi
 
     public function crossoverPM($chrom_parent1, $chrom_parent2)
     {
-        // DONE 1: Kerjain Crossovernya = sekarang pake parent yg random
-        // echo "Chrom Parent 1:".$this->my_print_r2($chrom_parent1)."<br>Chrom Parent 2:".$this->my_print_r2($chrom_parent2)."<br>";
         $length_chrom1 = sizeof($chrom_parent1);
         ## -1 fitness, -1 index yang length kan dia dimulai dari 0 bukan 1, sedangkan sizeof itu ngitungnya dr 1
 
@@ -192,7 +190,6 @@ class Generasi
         $i = $r1;
         $lengthplusone = $length_selected + 1;
         while ($i < $r2) {
-            // echo "chrom_parent1 ke $i ($chrom_parent1[$i]) diganti dengan chrom2_slice ke $index_slice - ($chrom2_slice[$index_slice])<br>chrom_parent2 ke $i ($chrom_parent2[$i]) diganti dengan chrom1_slice ke $index_slice - ($chrom1_slice[$index_slice])<br>";
             $chrom_parent1[$i] = $chrom2_slice[$index_slice];
             $chrom_parent2[$i] = $chrom1_slice[$index_slice];
             $index_slice++;
@@ -462,8 +459,11 @@ class Generasi
     }
 }
 
-$pops = 2;
-$time = 5;
-$cities_visited = 2;
+$pops = 10;
+// $time = 5;
+// $cities_visited = 2;
+// example: http://localhost/transity_backend/Generasi.php?availTime=4&numDest=1
+$time = $_GET['availTime'];
+$cities_visited = $_GET['numDest'];
 $gen = new Generasi($pops, $time, $cities_visited);
-$gen->runGAAll(1);
+$gen->runGAAll(50);

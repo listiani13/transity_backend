@@ -74,6 +74,46 @@ class Utils extends Database
         }
         return $total_jarak;
     }
+    public function getDistanceEach($cities, $id_data = false)
+    {
+        $total_jarak = 0;
+        $ukuran = sizeof($cities);
+        $json_jarak = file_get_contents("json_jarak.json");
+        $json_jarak = json_decode($json_jarak, true);
+        $data_perjalanan = [];
+        if (!$id_data) {
+            for ($i = 0; $i < $ukuran; $i++) {
+                if ($i != ($ukuran - 1)) {
+                    $a = $i + 1;
+                    $origin = $cities[$i];
+                    $dest = $cities[$a];
+                    array_push($data_perjalanan, $json_jarak["c$origin"]["c$dest"]);
+                }
+            }
+        } else {
+            $result_awal = $this->getJarak($id_data, 'AWAL');
+            $result_akhir = $this->getJarak($id_data, 'AKHIR');
+            // from DB
+            $json_jarak_awal = json_decode($result_awal["json_jarak"], true);
+            $json_jarak_akhir = json_decode($result_akhir["json_jarak"], true);
+            for ($i = 0; $i < $ukuran; $i++) {
+                $a = $i + 1;
+                if ($i !== ($ukuran - 1)) {
+                    $origin = $cities[$i];
+                    $dest = $cities[$a];
+                    if ($i === 0) {
+                        $jarak = $json_jarak_awal["c$origin"]["c$dest"];
+                    } else if ($i === ($ukuran - 2)) {
+                        $jarak = $json_jarak_akhir["c$origin"]["c$dest"];
+                    } else {
+                        $jarak = $json_jarak["c$origin"]["c$dest"];
+                    }
+                    array_push($data_perjalanan, $jarak);
+                }
+            }
+        }
+        return $data_perjalanan;
+    }
 
     public function insertDistance($id, $lat, $lang)
     {
