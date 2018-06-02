@@ -19,15 +19,16 @@ class Generasi
             $this->objek_wisata = $this->database->selectObjekWisataAll();
         }
         if (isset($_GET['lang']) && isset($_GET['lat'])) {
-            $this->id_data = 'B001';
+            // $this->id_data = 'B001';
+            $this->id_data = uniqid();
         }
         $this->individu = new Individu($time, $cities_visited, $this->objek_wisata, $this->digit, $this->id_data);
         if (isset($_GET['lang']) && isset($_GET['lat'])) {
             $lat = $_GET['lat'];
             $lang = $_GET['lang'];
             // DEBUGGING PURPOSE, PLEASE DELETE THIS SOON
-            $lat = "-8.634864";
-            $lang = "115.192476";
+            // $lat = "-8.634864";
+            // $lang = "115.192476";
             $url = "https://maps.googleapis.com/maps/api/geocode/json?latlng=" . $lat . "," . $lang . "&key=" . $API_KEY;
             $response = file_get_contents($url);
             $result = json_decode($response, true);
@@ -92,7 +93,7 @@ class Generasi
                 }
                 $i += $this->digit;
             }
-            $data_jarak = $utils->getDistanceEach($chrom_int);
+            $data_jarak = $utils->getDistanceEach($chrom_int, $this->id_data);
 
             $json_final = ["availability_time" => $this->time, "destination" => $chrom_name, "travel_distance" => $data_jarak, "total_travel_minutes" => 1 / end($first_pop)];
             echo json_encode($json_final);
@@ -324,7 +325,7 @@ class Generasi
             }
             $i += $this->digit;
         }
-        $distance = $this->individu->getDistance($chrom_int);
+        $distance = $this->individu->getDistance($chrom_int, $this->id_data);
         $total_distance = sprintf("%.1f", $distance);
         $total_minutes = ($total_distance / $this->velocity) * 60;
         $fitness = sprintf("%.10f", 1 / $total_minutes);
