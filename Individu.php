@@ -79,8 +79,8 @@ class Individu extends Utils
     public function checkIfSame($arr, $dest, $selection)
     {
         if (array_search($dest, $arr) !== false) {
-            $l_index = sizeof($selection) - 1;
-            $new_index = mt_rand(0, $l_index);
+            // $l_index = sizeof($selection) - 1;
+            $new_index = array_rand($selection);
             $new_dest = $this->checkIfSame($arr, $selection[$new_index], $selection);
             return $new_dest;
         } else {

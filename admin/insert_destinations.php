@@ -5,10 +5,13 @@ $data = json_decode(file_get_contents('php://input'), true);
 $dest_name = $data['dest_name'];
 $lat = $data['lat'];
 $lng = $data['lng'];
+$opening_time = $data['opening_time'];
+$closing_time = $data['closing_time'];
+
 $API_KEY = "AIzaSyBTE9O-ina1ZgUJgu9P4kN66etZyjErqYw";
 $path_file = '../json_jarak.json';
 
-$sql = "INSERT INTO `dest`(`dest_name`, `lat`, `lng`) VALUES ('$dest_name', '$lat', '$lng')";
+$sql = "INSERT INTO `dest`(`dest_name`, `lat`, `lng`, `opening_time`, `closing_time`) VALUES ('$dest_name', '$lat', '$lng','$opening_time','$closing_time')";
 $query = $db->query($sql);
 if ($query) {
     $sql_get_id = "SELECT MAX(dest_id) AS dest_id FROM dest";
@@ -17,7 +20,6 @@ if ($query) {
     $jarak = json_decode($json_jarak, true);
 
     $allDest = $db->query("SELECT dest_id, lat, lng FROM dest ORDER BY dest_id")->fetchAll(PDO::FETCH_ASSOC);
-    $allDestAmount = sizeOf($allDest);
 
     $destinations = '';
     foreach ($allDest as $line) {
@@ -33,24 +35,25 @@ if ($query) {
     if ($revert_result["status"] === 'OK' && $result["status"] === 'OK') {
         $i = 0;
         // untuk dari seluruh destinasi ke cX
+        $destIDCollection = [];
         foreach ($jarak as $key => $value) {
             $jarak[$key]["c$max_dest_id"] = number_format($revert_result["rows"][$i]["elements"][0]["distance"]["value"] / 1000, 2, '.', '');
+            array_push($destIDCollection, $key);
             $i++;
         }
 
         // Untuk dari cX ke seluruh destinasi
-        for ($i = 0; $i < $allDestAmount; $i++) {
-            $num = $i + 1;
-            $jarak["c$max_dest_id"]["c$num"] = number_format(($result["rows"][0]["elements"][$i]["distance"]["value"]) / 1000, 2, '.', '');
+        for ($i = 0; $i < sizeOf($destIDCollection); $i++) {
+            $jarak["c$max_dest_id"][$destIDCollection[$i]] = number_format(($result["rows"][0]["elements"][$i]["distance"]["value"]) / 1000, 2, '.', '');
             // echo $jarak["c12"]["c$num"] . "<br>";
         }
         $data = json_encode($jarak);
         $handle = fopen($path_file, 'w') or die('Cannot open file:  ' . $path_file);
         fwrite($handle, $data);
         fclose($handle);
+        echo json_encode(["status" => "OK"]);
     }
-
-    echo json_encode(["status" => "OK"]);
+    // die('Error Occured');
 } else {
     echo json_encode(["status" => "Failed"]);
 }

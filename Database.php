@@ -21,22 +21,45 @@ class Database
         $result = $this->db->query("SELECT dest_id, lat, lng FROM dest WHERE dest_id != '1' ORDER BY dest_id")->fetchAll(PDO::FETCH_ASSOC);
         return $result;
     }
-    public function selectObjekWisataAreaA()
+    public function getAvailableDestination($start_time, $availability_time, $id_data = null)
     {
-        $sql = "SELECT dest_id FROM dest WHERE dest_area = 'A'";
-        $query = $this->db->query($sql);
-        $res = $query->fetchAll(PDO::FETCH_ASSOC);
-        $objek = [];
-        foreach ($res as $line) {
-            array_push($objek, $line["dest_id"]);
+        $end_time = date('H:i:s', strtotime($start_time) + ($availability_time * 3600));
+        if ($id_data != null) {
+            $json_jarak = json_decode($this->getJarak($id_data, 'AWAL')['json_jarak'], true);
+        } else {
+            $json_jarak = json_decode(file_get_contents("json_jarak.json"), true);
         }
-        return $objek;
-        // return $this->array_flatten($res);
+        $selected_dest = [];
+        $available_destination = [];
+        $distance_array = $json_jarak["c1"];
+
+        if ($availability_time <= 6) {
+            foreach ($distance_array as $key => $value) {
+                if ($value <= 32.5) {
+                    array_push($available_destination, str_replace("c", "", $key));
+                }
+            }
+            $available_destination = "'" . join("','", $available_destination) . "'";
+
+            $sql = "SELECT dest_id FROM dest WHERE dest_id IN($available_destination)  AND ((opening_time<=CAST('$start_time' AS time) AND closing_time >= CAST('$end_time' AS time)) OR (open_24h = 'Y')) ";
+
+            $query = $this->db->query($sql);
+            $res = $query->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($res as $line) {
+                array_push($selected_dest, $line['dest_id']);
+            }
+
+        } else {
+            $selected_dest = $this->selectObjekWisataAll($start_time, $end_time);
+        }
+        return $selected_dest;
     }
-    public function selectObjekWisataAll()
+    public function selectObjekWisataAll($start_time, $end_time)
     {
-        $utils = new Utils();
-        $sql = "SELECT dest_id FROM dest";
+        $sql = "SELECT dest_id FROM dest WHERE ((
+                opening_time<=CAST('$start_time' AS time)
+                AND closing_time >= CAST('$end_time' AS time)
+            ) OR (open_24h = 'Y'))";
         $query = $this->db->query($sql);
         $res = $query->fetchAll(\PDO::FETCH_ASSOC);
         $objek = [];

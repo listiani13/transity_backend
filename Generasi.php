@@ -2,26 +2,23 @@
 include 'Individu.php';
 class Generasi
 {
-    public function __construct($pops, $time, $cities_visited)
+    public function __construct($pops, $time, $start_time, $cities_visited)
     {
         define('MUTATION_RATE', 0.1);
         define('CROSSOVER_RATE', 0.5);
         $API_KEY = "AIzaSyBTE9O-ina1ZgUJgu9P4kN66etZyjErqYw";
-        $this->digit = 4;
+        $this->digit = 5;
         $this->time = $time;
         $this->id_data = null;
         $this->origin_name = "Ngurah Rai";
 
         $this->database = new Database();
-        if ($this->time <= 6) {
-            $this->objek_wisata = $this->database->selectObjekWisataAreaA();
-        } else {
-            $this->objek_wisata = $this->database->selectObjekWisataAll();
-        }
+
         if (isset($_GET['lang']) && isset($_GET['lat'])) {
-            // $this->id_data = 'B001';
             $this->id_data = uniqid();
         }
+        $this->objek_wisata = $this->database->getAvailableDestination($start_time, $time, $this->id_data);
+
         $this->individu = new Individu($time, $cities_visited, $this->objek_wisata, $this->digit, $this->id_data);
         if (isset($_GET['lang']) && isset($_GET['lat'])) {
             $lat = $_GET['lat'];
@@ -36,8 +33,7 @@ class Generasi
             $this->individu->insertDistance($this->id_data, $lat, $lang);
         }
 
-        // Belum termasuk jam
-        $this->digit = 4;
+        // TODO: Belum termasuk jam
         define('BATAS_AWAL', $this->digit * 2);
         $this->utils = new Utils();
         $this->population = $pops;
@@ -112,8 +108,8 @@ class Generasi
                 array_push($fitness_collection, end($line));
             }
 
-            $population = $this->crossover($population);
-            $population = $this->mutation($population);
+            // $population = $this->crossover($population);
+            // $population = $this->mutation($population);
             $selected_pops = $population[$this->selection($population)];
             return $selected_pops;
         } catch (Exception $e) {
@@ -466,5 +462,6 @@ $pops = 10;
 // example: http://localhost/transity_backend/Generasi.php?availTime=4&numDest=1
 $time = $_GET['availTime'];
 $cities_visited = $_GET['numDest'];
-$gen = new Generasi($pops, $time, $cities_visited);
+$start_time = $_GET['startTime'];
+$gen = new Generasi($pops, $time, $start_time, $cities_visited);
 $gen->runGAAll(50);
