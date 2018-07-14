@@ -7,20 +7,16 @@ class Generasi
         define('MUTATION_RATE', 0.1);
         define('CROSSOVER_RATE', 0.5);
         $API_KEY = "AIzaSyBTE9O-ina1ZgUJgu9P4kN66etZyjErqYw";
-        $this->digit = 5;
+        $this->digit = 7;
         $this->time = $time;
         $this->id_data = null;
         $this->origin_name = "Ngurah Rai";
 
         $this->database = new Database();
+        $this->utils = new Utils();
 
         if (isset($_GET['lang']) && isset($_GET['lat'])) {
             $this->id_data = uniqid();
-        }
-        $this->objek_wisata = $this->database->getAvailableDestination($start_time, $time, $this->id_data);
-
-        $this->individu = new Individu($time, $cities_visited, $this->objek_wisata, $this->digit, $this->id_data);
-        if (isset($_GET['lang']) && isset($_GET['lat'])) {
             $lat = $_GET['lat'];
             $lang = $_GET['lang'];
             // DEBUGGING PURPOSE, PLEASE DELETE THIS SOON
@@ -30,8 +26,11 @@ class Generasi
             $response = file_get_contents($url);
             $result = json_decode($response, true);
             $this->origin_name = $result["results"][0]["formatted_address"];
-            $this->individu->insertDistance($this->id_data, $lat, $lang);
+            $this->utils->insertDistance($this->id_data, $lat, $lang);
         }
+        $this->objek_wisata = $this->database->getAvailableDestination($start_time, $time, $this->id_data);
+
+        $this->individu = new Individu($time, $cities_visited, $this->objek_wisata, $this->digit, $this->id_data);
 
         // TODO: Belum termasuk jam
         define('BATAS_AWAL', $this->digit * 2);
@@ -55,7 +54,6 @@ class Generasi
         for ($i = 0; $i < $counter; $i++) {
             try {
                 $first_pop = $this->runGA($first_pop);
-
             } catch (Exception $e) {
                 // echo $e->getMessage() . "<br>";
                 // break;
@@ -63,7 +61,7 @@ class Generasi
                 die();
             }
         }
-
+        // echo "<pre>" . json_encode($first_pop) . "</pre>";
         // Convert hasil
         if ($first_pop != null || $first_pop != '') {
             $arr_sel_pop = array_slice($first_pop, 0, -1);
@@ -102,15 +100,22 @@ class Generasi
         // Inisiasi Kromosom
         $utils = new Utils();
         try {
+            // echo "<br>first_pop: " . json_encode($first_pop) . "<br>";
             $population = $this->generatePops($first_pop);
             $fitness_collection = [];
             foreach ($population as $line) {
+                // echo "<pre> populasi" . json_encode($line) . "</pre>";
                 array_push($fitness_collection, end($line));
             }
 
-            // $population = $this->crossover($population);
-            // $population = $this->mutation($population);
+            $population = $this->crossover($population);
+            $population = $this->mutation($population);
             $selected_pops = $population[$this->selection($population)];
+            // echo "<pre>";
+            // var_dump($population[0]);
+            // echo json_encode($population[0]);
+            // echo "</pre>";
+
             return $selected_pops;
         } catch (Exception $e) {
             # instead maybe better to use this
@@ -126,7 +131,7 @@ class Generasi
         $database = new Database();
         $kromosom = new Individu($this->time, $this->cities_visited, $this->objek_wisata, $this->digit, $this->id_data);
         $population = [];
-        if ($first_pop !== '') {
+        if ($first_pop !== '' && $first_pop != null) {
             $population[0] = $first_pop;
             $pops_counter = $this->population - 1;
         } else {
@@ -240,6 +245,33 @@ class Generasi
 
         return $population;
     }
+
+    public function selectionRW($fitness)
+    {
+        $utils = new Utils();
+        // DEBUG
+        // echo "Fitness Collection:";
+        // var_dump($fitness);
+        $total_fitness = 0;
+        foreach ($fitness as $line) {
+            $total_fitness += $line;
+        }
+        // echo "<br>Total Fitness: $total_fitness";
+        $random_float_num = $this->random_float(0, $total_fitness);
+        // echo "<br>Random Float Num: $random_float_num";
+        $partial_sum = 0;
+        $i = 0;
+        foreach ($fitness as $line) {
+            $partial_sum += $line;
+            // echo "<br>partial sum: $partial_sum <br>";
+            if ($partial_sum >= $random_float_num) {
+                // echo "index selected for this generation by roulette wheel= $i<br>";
+                return $i;
+            }
+            $i++;
+        }
+    }
+
     public function selection(&$population)
     {
         $fitness_collection = [];
@@ -270,32 +302,6 @@ class Generasi
         $chrom[$r1] = $chrom[$r2];
         $chrom[$r2] = $temp;
         return $chrom;
-    }
-
-    public function selectionRW($fitness)
-    {
-        $utils = new Utils();
-        // DEBUG
-        // echo "Fitness Collection:";
-        // var_dump($fitness);
-        $total_fitness = 0;
-        foreach ($fitness as $line) {
-            $total_fitness += $line;
-        }
-        // echo "<br>Total Fitness: $total_fitness";
-        $random_float_num = $this->random_float(0, $total_fitness);
-        // echo "<br>Random Float Num: $random_float_num";
-        $partial_sum = 0;
-        $i = 0;
-        foreach ($fitness as $line) {
-            $partial_sum += $line;
-            // echo "<br>partial sum: $partial_sum <br>";
-            if ($partial_sum >= $random_float_num) {
-                // echo "index selected for this generation by roulette wheel= $i<br>";
-                return $i;
-            }
-            $i++;
-        }
     }
 
 //====================== UTILS =============================\\
@@ -391,7 +397,7 @@ class Generasi
             // $index_randomized_city = mt_rand(0,$last_index_objek);
             $index_randomized_city = array_rand($this->objek_wisata);
             $city_check = $this->notZeroOrOne($this->objek_wisata[$index_randomized_city]);
-            $randomized_city = $this->checkIfSame($ar_int, $city_check, $this->objek_wisata);
+            $randomized_city = $this->checkIfSame($ar_int, $city_check, $this->objek_wisata, $this->cities_visited);
             // echo "- Destinasi Baru = $randomized_city<br>";
             $new_city_binary = $this->individu->dectobin($randomized_city, $this->digit);
             $new_city_binary_index = 0;
@@ -443,12 +449,16 @@ class Generasi
         $dec = bindec($bin);
         return $dec;
     }
-    public function checkIfSame($arr, $dest, $selection)
+    public function checkIfSame($arr, $dest, $selection, $cities_visited)
     {
+        if (sizeof($selection) < $cities_visited) {
+            echo json_encode(["status" => "error", "error" => "Sorry! No route is available for this time."]);
+            die();
+        }
         if (array_search($dest, $arr) !== false) {
             $l_index = sizeof($selection) - 1;
             $new_index = mt_rand(0, $l_index);
-            $new_dest = $this->checkIfSame($arr, $selection[$new_index], $selection);
+            $new_dest = $this->checkIfSame($arr, $selection[$new_index], $selection, $this->cities_visited);
             return $new_dest;
         } else {
             return $dest;
@@ -464,4 +474,4 @@ $time = $_GET['availTime'];
 $cities_visited = $_GET['numDest'];
 $start_time = $_GET['startTime'];
 $gen = new Generasi($pops, $time, $start_time, $cities_visited);
-$gen->runGAAll(50);
+$gen->runGAAll(1);

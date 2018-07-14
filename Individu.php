@@ -43,7 +43,7 @@ class Individu extends Utils
         for ($i = 0; $i < $this->chrom_length; $i++) {
             $index_randomized_city = array_rand($this->objek_wisata);
             $chosen_destination = $this->objek_wisata[$index_randomized_city];
-            $randomized_city = $this->checkIfSame($chrom_int, $chosen_destination, $this->objek_wisata);
+            $randomized_city = $this->checkIfSame($chrom_int, $chosen_destination, $this->objek_wisata, $this->chrom_length);
             array_push($chrom_int, $randomized_city);
             $chrom_binary = array_merge($chrom_binary, $this->dectobin($randomized_city, $this->digit));
         }
@@ -76,13 +76,19 @@ class Individu extends Utils
             return $fitness;
         }
     }
-    public function checkIfSame($arr, $dest, $selection)
+    public function checkIfSame($arr, $dest, $selection, $cities_visited)
     {
+        // echo "selection<br>";
+        // var_dump($selection);
+        if (sizeof($selection) < $cities_visited) {
+            echo json_encode(["status" => "error", "error" => "Sorry! No route is available for this time."]);
+            die();
+        }
         if (array_search($dest, $arr) !== false) {
-            // $l_index = sizeof($selection) - 1;
             $new_index = array_rand($selection);
-            $new_dest = $this->checkIfSame($arr, $selection[$new_index], $selection);
+            $new_dest = $this->checkIfSame($arr, $selection[$new_index], $selection, $cities_visited);
             return $new_dest;
+            // die();
         } else {
             return $dest;
         }

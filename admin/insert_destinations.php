@@ -32,6 +32,9 @@ if ($query) {
     $revert_url = "https://maps.googleapis.com/maps/api/distancematrix/json?&origins=" . $destinations . "&destinations=" . $lat . "," . $lng . "&key=" . $API_KEY;
     $revert_response = file_get_contents($revert_url);
     $revert_result = json_decode($revert_response, true);
+    echo "sini";
+    var_dump($revert_result["status"]);
+    var_dump($result["status"]);
     if ($revert_result["status"] === 'OK' && $result["status"] === 'OK') {
         $i = 0;
         // untuk dari seluruh destinasi ke cX
@@ -48,6 +51,7 @@ if ($query) {
             // echo $jarak["c12"]["c$num"] . "<br>";
         }
         $data = json_encode($jarak);
+        echo "sampe sini";
         $handle = fopen($path_file, 'w') or die('Cannot open file:  ' . $path_file);
         fwrite($handle, $data);
         fclose($handle);
