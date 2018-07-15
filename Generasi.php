@@ -29,8 +29,9 @@ class Generasi
             $this->utils->insertDistance($this->id_data, $lat, $lang);
         }
         $this->objek_wisata = $this->database->getAvailableDestination($start_time, $time, $this->id_data);
-
-        $this->individu = new Individu($time, $cities_visited, $this->objek_wisata, $this->digit, $this->id_data);
+        $json_jarak = file_get_contents("json_jarak.json");
+        $this->json_jarak = json_decode($json_jarak, true);
+        $this->individu = new Individu($time, $cities_visited, $this->objek_wisata, $this->digit, $this->id_data, $this->json_jarak);
 
         // TODO: Belum termasuk jam
         define('BATAS_AWAL', $this->digit * 2);
@@ -87,7 +88,7 @@ class Generasi
                 }
                 $i += $this->digit;
             }
-            $data_jarak = $utils->getDistanceEach($chrom_int, $this->id_data);
+            $data_jarak = $utils->getDistanceEach($chrom_int, $this->id_data, $this->json_jarak);
 
             $json_final = ["availability_time" => $this->time, "destination" => $chrom_name, "travel_distance" => $data_jarak, "total_travel_minutes" => 1 / end($first_pop)];
             echo json_encode($json_final);
@@ -129,7 +130,7 @@ class Generasi
     public function generatePops($first_pop)
     {
         $database = new Database();
-        $kromosom = new Individu($this->time, $this->cities_visited, $this->objek_wisata, $this->digit, $this->id_data);
+        $kromosom = new Individu($this->time, $this->cities_visited, $this->objek_wisata, $this->digit, $this->id_data, $this->json_jarak);
         $population = [];
         if ($first_pop !== '' && $first_pop != null) {
             $population[0] = $first_pop;
@@ -327,7 +328,7 @@ class Generasi
             }
             $i += $this->digit;
         }
-        $distance = $this->individu->getDistance($chrom_int, $this->id_data);
+        $distance = $this->individu->getDistance($chrom_int, $this->id_data, $this->json_jarak);
         $total_distance = sprintf("%.1f", $distance);
         $total_minutes = ($total_distance / $this->velocity) * 60;
         $fitness = sprintf("%.10f", 1 / $total_minutes);
@@ -368,7 +369,7 @@ class Generasi
                         break;
                     }
                     array_push($ar_int, $dec);
-                    if (!$this->individu->verifikasi($dec) && $dec != 0) {
+                    if (!$this->individu->verifikasi($dec, $this->json_jarak) && $dec != 0) {
                         $failed_index = $failed_index_counter;
                         // echo "<br>Tidak ditemukan objek wisata ke- $failed_index_counter - ($dec)<br>";
                         // echo $this->my_print_r2($chromosom);
@@ -474,4 +475,4 @@ $time = $_GET['availTime'];
 $cities_visited = $_GET['numDest'];
 $start_time = $_GET['startTime'];
 $gen = new Generasi($pops, $time, $start_time, $cities_visited);
-$gen->runGAAll(1);
+$gen->runGAAll(5);

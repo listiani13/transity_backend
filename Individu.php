@@ -4,7 +4,7 @@ spl_autoload_register(function ($class_name) {
 });
 class Individu extends Utils
 {
-    public function __construct($time, $cities_amount, $objek_wisata, $digit, $id_data = null)
+    public function __construct($time, $cities_amount, $objek_wisata, $digit, $id_data = null, $json_jarak)
     {
         // define('API_KEY', 'AIzaSyBTE9O-ina1ZgUJgu9P4kN66etZyjErqYw');
         $this->time = $time;
@@ -19,6 +19,7 @@ class Individu extends Utils
         $this->velocity = 40;
         $this->id_data = $id_data;
         $this->waktu_kunjung = 60;
+        $this->json_jarak = $json_jarak;
         $servername = "localhost";
         $username = "root";
         $password = "";
@@ -66,7 +67,7 @@ class Individu extends Utils
     }
     public function generateFitnessFunction($cities)
     {
-        $total_distance = $this->getDistance($cities, $this->id_data);
+        $total_distance = $this->getDistance($cities, $this->id_data, $this->json_jarak);
         $total_minutes = ($total_distance / $this->velocity) * 60;
         $minutes_allowed = ($this->time * 60) - ($this->waktu_kunjung * $this->chrom_length);
         if ($total_minutes > $minutes_allowed) {
@@ -88,7 +89,6 @@ class Individu extends Utils
             $new_index = array_rand($selection);
             $new_dest = $this->checkIfSame($arr, $selection[$new_index], $selection, $cities_visited);
             return $new_dest;
-            // die();
         } else {
             return $dest;
         }
