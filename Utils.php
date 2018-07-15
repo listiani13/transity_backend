@@ -25,22 +25,18 @@ class Utils extends Database
         }
         return false;
     }
-    public function verifikasi($num)
+    public function verifikasi($num, $json_jarak)
     {
-        $json_jarak = file_get_contents("json_jarak.json");
-        $json_jarak = json_decode($json_jarak, true);
         $total_jarak = 0;
         if (!isset($json_jarak["c$num"])) {
             return false;
         }
         return true;
     }
-    public function getDistance($cities, $id_data = false)
+    public function getDistance($cities, $id_data = false, $json_jarak)
     {
         $total_jarak = 0;
         $ukuran = sizeof($cities);
-        $json_jarak = file_get_contents("json_jarak.json");
-        $json_jarak = json_decode($json_jarak, true);
         if (!$id_data) {
             for ($i = 0; $i < $ukuran; $i++) {
                 if ($i != ($ukuran - 1)) {
@@ -76,12 +72,10 @@ class Utils extends Database
         }
         return $total_jarak;
     }
-    public function getDistanceEach($cities, $id_data = false)
+    public function getDistanceEach($cities, $id_data = false, $json_jarak)
     {
         $total_jarak = 0;
         $ukuran = sizeof($cities);
-        $json_jarak = file_get_contents("json_jarak.json");
-        $json_jarak = json_decode($json_jarak, true);
         $data_perjalanan = [];
         if (!$id_data) {
             for ($i = 0; $i < $ukuran; $i++) {
@@ -125,7 +119,10 @@ class Utils extends Database
         // $API_KEY = "AIzaSyBdrx8x273DDhR1bbTzwZ7AjpfGW36_x-8";
         // $API_KEY = "AIzaSyByHOU2umJ6YMe4tiEYHcwX-qzg1PsADVo";
         // $API_KEY = "AIzaSyB_7NvBzfMDI34tGPnzKZOGwgRxgXm2ZFc";
-        $API_KEY = "AIzaSyCqxZ82BAwgW97NCoAwWnpe48e_vwNOfLU";
+        // $API_KEY = "AIzaSyCqxZ82BAwgW97NCoAwWnpe48e_vwNOfLU";
+        // $API_KEY = "AIzaSyDZZUvznbJ4w3Nng5nijzsrln5EtAHZ1lI";
+        // $API_KEY = "AIzaSyDuOjMjbRZLNxJKxRAAUwj7ZEvE-pQtEBQ";
+        $API_KEY = "AIzaSyB6agDsuEVTrmXUt8QqP6Ux4IcQazTsiSc";
 
         $allDest = $this->selectAllDestinations();
         // TODO: Ini ga penting
@@ -185,7 +182,7 @@ function getDistance($allDest, $lat, $lang, $API_KEY, $type)
                 // $json_data = json_encode($arr_data);
                 $arr_isi = [];
             } else {
-                echo json_encode(["status" => "fail", "error" => "Get Distance from Current Location failed."]);
+                echo json_encode(["status" => "fail", "error" => "Get Distance from Current Location failed.", "debug" => "status not oK akhir" . json_encode($result)]);
                 http_response_code(500);
                 die();
             }
@@ -210,7 +207,6 @@ function getDistance($allDest, $lat, $lang, $API_KEY, $type)
             }
 
         }
-
         $encoded_destination_counter = $encoded_destination_counter + 1;
     }
 
