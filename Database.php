@@ -93,6 +93,3 @@ class Database
         }
     }
 }
-
-$db = new Database();
-$db->getAvailableDestination('13:00', 12);
