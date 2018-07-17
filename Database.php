@@ -58,7 +58,7 @@ class Database
     {
         $sql = "SELECT dest_id FROM dest WHERE ((
                 opening_time<=CAST('$start_time' AS time)
-                AND closing_time >= CAST('$end_time' AS time)
+                AND (closing_time > CAST('$end_time' AS time) AND opening_time > closing_time)
             ) OR (open_24h = 'Y'))";
         $query = $this->db->query($sql);
         $res = $query->fetchAll(\PDO::FETCH_ASSOC);
@@ -93,3 +93,6 @@ class Database
         }
     }
 }
+
+$db = new Database();
+$db->getAvailableDestination('13:00', 12);
