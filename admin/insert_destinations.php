@@ -7,11 +7,14 @@ $lat = $data['lat'];
 $lng = $data['lng'];
 $opening_time = $data['opening_time'];
 $closing_time = $data['closing_time'];
-
+$open_24h = '';
+if (isset($data['open_24h'])) {
+    $open_24h = $data['open_24h'];
+}
 $API_KEY = "AIzaSyBTE9O-ina1ZgUJgu9P4kN66etZyjErqYw";
 $path_file = '../json_jarak.json';
 
-$sql = "INSERT INTO `dest`(`dest_name`, `lat`, `lng`, `opening_time`, `closing_time`) VALUES ('$dest_name', '$lat', '$lng','$opening_time','$closing_time')";
+$sql = "INSERT INTO `dest`(`dest_name`, `lat`, `lng`, `opening_time`, `closing_time`, `open_24h`) VALUES ('$dest_name', '$lat', '$lng','$opening_time','$closing_time', '$open_24h')";
 $query = $db->query($sql);
 if ($query) {
     $sql_get_id = "SELECT MAX(dest_id) AS dest_id FROM dest";
@@ -32,9 +35,6 @@ if ($query) {
     $revert_url = "https://maps.googleapis.com/maps/api/distancematrix/json?&origins=" . $destinations . "&destinations=" . $lat . "," . $lng . "&key=" . $API_KEY;
     $revert_response = file_get_contents($revert_url);
     $revert_result = json_decode($revert_response, true);
-    echo "sini";
-    var_dump($revert_result["status"]);
-    var_dump($result["status"]);
     if ($revert_result["status"] === 'OK' && $result["status"] === 'OK') {
         $i = 0;
         // untuk dari seluruh destinasi ke cX
@@ -48,18 +48,17 @@ if ($query) {
         // Untuk dari cX ke seluruh destinasi
         for ($i = 0; $i < sizeOf($destIDCollection); $i++) {
             $jarak["c$max_dest_id"][$destIDCollection[$i]] = number_format(($result["rows"][0]["elements"][$i]["distance"]["value"]) / 1000, 2, '.', '');
-            // echo $jarak["c12"]["c$num"] . "<br>";
         }
         $data = json_encode($jarak);
-        echo "sampe sini";
         $handle = fopen($path_file, 'w') or die('Cannot open file:  ' . $path_file);
         fwrite($handle, $data);
         fclose($handle);
         echo json_encode(["status" => "OK"]);
+    } else {
+        echo json_encode(["status" => "fail", "error" => "Get distance failed."]);
     }
-    // die('Error Occured');
 } else {
-    echo json_encode(["status" => "Failed"]);
+    echo json_encode(["status" => "fail", "error" => "Insert New Destination failed. Error Occured"]);
 }
 
 // TODO: Make validator for incoming data
