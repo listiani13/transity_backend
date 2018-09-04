@@ -114,7 +114,7 @@ class Utils extends Database
     public function insertDistance($id, $lat, $lang)
     {
         // TODO: sebelum push ke git hub delete ini dulu, dan cari cara supaya ini bisa ditaroh di file env
-        // $API_KEY = "AIzaSyBTE9O-ina1ZgUJgu9P4kN66etZyjErqYw";
+        $API_KEY = "AIzaSyBTE9O-ina1ZgUJgu9P4kN66etZyjErqYw";
         // $API_KEY = "AIzaSyCaU7m2QP8JQF0Rj1NJcNRVP1nyLYSxVkk";
         // $API_KEY = "AIzaSyBdrx8x273DDhR1bbTzwZ7AjpfGW36_x-8";
         // $API_KEY = "AIzaSyByHOU2umJ6YMe4tiEYHcwX-qzg1PsADVo";
@@ -122,7 +122,7 @@ class Utils extends Database
         // $API_KEY = "AIzaSyCqxZ82BAwgW97NCoAwWnpe48e_vwNOfLU";
         // $API_KEY = "AIzaSyDZZUvznbJ4w3Nng5nijzsrln5EtAHZ1lI";
         // $API_KEY = "AIzaSyDuOjMjbRZLNxJKxRAAUwj7ZEvE-pQtEBQ";
-        $API_KEY = "AIzaSyB6agDsuEVTrmXUt8QqP6Ux4IcQazTsiSc";
+        // $API_KEY = "AIzaSyB6agDsuEVTrmXUt8QqP6Ux4IcQazTsiSc";
 
         $allDest = $this->selectAllDestinations();
         // TODO: Ini ga penting

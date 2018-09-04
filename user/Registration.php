@@ -8,9 +8,12 @@ $role = 'USER';
 
 $sql = "INSERT INTO `users`(`username`, `password`, `role`) VALUES ('$username', '$password', '$role')";
 $query = $db->query($sql);
-
 if (!$query) {
-    http_response_code(500);
+    $error = $db->errorInfo();
+    if ($error[0] === "23000") {
+        echo json_encode(['status' => 'fail', 'error' => 'Username has been taken.']);
+    }
+    http_response_code(400);
     die();
 } else {
     http_response_code(200);

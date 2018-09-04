@@ -42,12 +42,11 @@ class Generasi
         $this->velocity = 40;
 
     }
-    public function getDestinationName($id)
+    public function getDestinationDetail($id)
     {
         $name = $this->database->selectData($id)->fetch();
         $name_url = str_replace(" ", "+", $name);
-        return $name_url['dest_name'];
-        // $row = $stmt->fetch();
+        return $name_url;
     }
     public function runGAAll($counter)
     {
@@ -62,13 +61,14 @@ class Generasi
                 die();
             }
         }
-        // echo "<pre>" . json_encode($first_pop) . "</pre>";
         // Convert hasil
         if ($first_pop != null || $first_pop != '') {
             $arr_sel_pop = array_slice($first_pop, 0, -1);
             $b = sizeof($arr_sel_pop);
             $chrom_int = [];
             $chrom_name = [];
+            $chrom_position = [];
+            $destination_description = [];
             $i = 0;
             $utils = new Utils();
             $dec = 0;
@@ -78,9 +78,24 @@ class Generasi
                 if ($i === sizeof($first_pop) - $this->digit - 1 || $i === $this->digit) {
                     $name = $this->origin_name;
                     $dec = 1;
+                    if (isset($_GET['lat']) && isset($_GET['lang'])) {
+                        $latitude = $_GET['lat'];
+                        $longitude = $_GET['lang'];
+                    } else {
+                        $latitude = '-8.746717';
+                        $longitude = '115.166786';
+                    }
+                    array_push($chrom_position, ["latitude" => $latitude, "longitude" => $longitude]);
+                    array_push($destination_description, "Starting Point");
                 } else if ($i !== 0) {
                     $dec = $this->bintodec($binary_array);
-                    $name = $this->getDestinationName($dec);
+                    $destination_detail = $this->getDestinationDetail($dec);
+                    $name = $destination_detail['dest_name'];
+                    $latitude = $destination_detail['lat'];
+                    $longitude = $destination_detail['lng'];
+                    array_push($chrom_position, ["latitude" => $latitude, "longitude" => $longitude]);
+                    array_push($destination_description, $destination_detail['description']);
+
                 }
                 if ($i !== 0) {
                     array_push($chrom_int, $dec);
@@ -90,7 +105,7 @@ class Generasi
             }
             $data_jarak = $utils->getDistanceEach($chrom_int, $this->id_data, $this->json_jarak);
 
-            $json_final = ["availability_time" => $this->time, "destination" => $chrom_name, "travel_distance" => $data_jarak, "total_travel_minutes" => 1 / end($first_pop)];
+            $json_final = ["availability_time" => $this->time, "destination" => $chrom_name, "position" => $chrom_position, "destination_description" => $destination_description, "travel_distance" => $data_jarak, "total_travel_minutes" => 1 / end($first_pop)];
             echo json_encode($json_final);
         }
 
