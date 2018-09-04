@@ -12,6 +12,8 @@ if (isset($data['open_24h'])) {
     $open_24h = $data['open_24h'];
 }
 $API_KEY = "AIzaSyBTE9O-ina1ZgUJgu9P4kN66etZyjErqYw";
+// $API_KEY = "AIzaSyCaU7m2QP8JQF0Rj1NJcNRVP1nyLYSxVkk";
+
 $path_file = '../json_jarak.json';
 
 $sql = "INSERT INTO `dest`(`dest_name`, `lat`, `lng`, `opening_time`, `closing_time`, `open_24h`) VALUES ('$dest_name', '$lat', '$lng','$opening_time','$closing_time', '$open_24h')";
